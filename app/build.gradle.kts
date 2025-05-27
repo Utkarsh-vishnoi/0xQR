@@ -15,6 +15,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders["usesCleartextTraffic"] = "false"
     }
 
     buildFeatures {
@@ -28,6 +30,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Security hardening for air-gapped deployment
+            isDebuggable = false
+            isJniDebuggable = false
+        }
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
         }
     }
     compileOptions {
@@ -36,6 +45,15 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+    }
+
+    // Security configuration for air-gapped environments
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Remove any network-related resources
+            excludes += "/META-INF/services/javax.xml.stream.*"
+        }
     }
 }
 
