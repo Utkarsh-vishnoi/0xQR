@@ -61,4 +61,24 @@
     <color name="encryption_success">#4CAF50</color>
     <color name="encryption_warning">#FF9800</color>
     <color name="encryption_error">#F44336</color>
+
+    <!-- Security Strength Colors -->
+    <color name="strength_very_weak">#F44336</color>
+    <color name="strength_weak">#FF9800</color>
+    <color name="strength_fair">#FFC107</color>
+    <color name="strength_good">#8BC34A</color>
+    <color name="strength_strong">#4CAF50</color>
+    <color name="strength_very_strong">#2196F3</color>
+
+    <!-- Security Level Colors -->
+    <color name="security_insecure">#D32F2F</color>
+    <color name="security_low">#F57C00</color>
+    <color name="security_medium">#FBC02D</color>
+    <color name="security_high">#388E3C</color>
+    <color name="security_very_high">#1976D2</color>
+
+    <!-- Text Colors for Strength -->
+    <color name="strength_text_weak">#D32F2F</color>
+    <color name="strength_text_medium">#F57C00</color>
+    <color name="strength_text_strong">#2E7D32</color>
 </resources>

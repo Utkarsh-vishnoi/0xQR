@@ -5,24 +5,30 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import io.github.utkarshvishnoi.zeroxqr.ZeroXQRApplication
 import io.github.utkarshvishnoi.zeroxqr.databinding.FragmentHistoryBinding
+import io.github.utkarshvishnoi.zeroxqr.repository.RepositoryResult
 import io.github.utkarshvishnoi.zeroxqr.ui.adapters.HistoryAdapter
 import io.github.utkarshvishnoi.zeroxqr.ui.models.HistoryItem
+import kotlinx.coroutines.launch
 
 /**
  * Fragment for displaying encryption/decryption history.
  *
  * Phase 1: Complete UI with mock history data.
- * Phase 2: Will integrate with Room database for real persistence.
+ * Phase 2: Real database integration with Room persistence.
  */
 class HistoryFragment : Fragment() {
 
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
 
+    private lateinit var app: ZeroXQRApplication
     private lateinit var historyAdapter: HistoryAdapter
-    private val mockHistoryItems = mutableListOf<HistoryItem>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,9 +42,12 @@ class HistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Get application instance for repository access
+        app = requireActivity().application as ZeroXQRApplication
+
         setupRecyclerView()
         setupClickListeners()
-        loadMockData()
+        observeHistoryData()
     }
 
     /**
@@ -65,73 +74,82 @@ class HistoryFragment : Fragment() {
     }
 
     /**
-     * Loads mock history data for Phase 1 demonstration.
-     * TODO Phase 2: Replace with real database queries
+     * Phase 2: Observes real history data from Room database.
+     * Replaces loadMockData from Phase 1.
      */
-    private fun loadMockData() {
-        mockHistoryItems.addAll(
-            listOf(
-                HistoryItem(
-                    id = 1,
-                    operationType = HistoryItem.OperationType.ENCRYPT,
-                    preview = "This is a sample encrypted message...",
-                    timestamp = System.currentTimeMillis() - 2 * 60 * 60 * 1000 // 2 hours ago
-                ),
-                HistoryItem(
-                    id = 2,
-                    operationType = HistoryItem.OperationType.DECRYPT,
-                    preview = "Successfully decrypted confidential data...",
-                    timestamp = System.currentTimeMillis() - 24 * 60 * 60 * 1000 // 1 day ago
-                ),
-                HistoryItem(
-                    id = 3,
-                    operationType = HistoryItem.OperationType.ENCRYPT,
-                    preview = "Another encrypted message for testing...",
-                    timestamp = System.currentTimeMillis() - 3 * 24 * 60 * 60 * 1000 // 3 days ago
-                )
-            )
-        )
-
-        updateUI()
+    private fun observeHistoryData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.encryptionRepository.getEncryptionHistory().collect { historyItems ->
+                    updateUI(historyItems)
+                }
+            }
+        }
     }
 
     /**
      * Updates the UI based on whether history items exist.
      */
-    private fun updateUI() {
-        if (mockHistoryItems.isEmpty()) {
+    private fun updateUI(historyItems: List<HistoryItem>) {
+        if (historyItems.isEmpty()) {
             binding.rvHistory.visibility = View.GONE
             binding.layoutEmptyState.visibility = View.VISIBLE
         } else {
             binding.rvHistory.visibility = View.VISIBLE
             binding.layoutEmptyState.visibility = View.GONE
-            historyAdapter.submitList(mockHistoryItems.toList())
+            historyAdapter.submitList(historyItems)
         }
     }
 
     /**
-     * Deletes a specific history item.
-     * TODO Phase 2: Implement real database deletion
+     * Phase 2: Deletes a specific history item from database.
+     * Replaces mock deletion from Phase 1.
      */
     private fun deleteHistoryItem(historyItem: HistoryItem) {
-        mockHistoryItems.remove(historyItem)
-        updateUI()
-        showSuccessMessage("Item deleted")
+        lifecycleScope.launch {
+            try {
+                when (val result = app.encryptionRepository.deleteHistoryItem(historyItem.id)) {
+                    is RepositoryResult.Success -> {
+                        showSuccessMessage("Item deleted successfully")
+                    }
+
+                    is RepositoryResult.Error -> {
+                        showErrorMessage("Failed to delete item: ${result.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                showErrorMessage("Failed to delete item: ${e.message}")
+            }
+        }
     }
 
     /**
-     * Deletes all history items.
-     * TODO Phase 2: Implement real database bulk deletion
+     * Phase 2: Deletes all history items from database.
+     * Replaces mock bulk deletion from Phase 1.
      */
     private fun deleteAllHistory() {
-        if (mockHistoryItems.isEmpty()) {
-            showErrorMessage("No items to delete")
-            return
-        }
+        lifecycleScope.launch {
+            try {
+                // Check if there are items to delete
+                val count = app.encryptionRepository.getHistoryCount()
+                if (count == 0) {
+                    showErrorMessage("No items to delete")
+                    return@launch
+                }
 
-        mockHistoryItems.clear()
-        updateUI()
-        showSuccessMessage("All history deleted")
+                when (val result = app.encryptionRepository.deleteAllHistory()) {
+                    is RepositoryResult.Success -> {
+                        showSuccessMessage("All history deleted successfully")
+                    }
+
+                    is RepositoryResult.Error -> {
+                        showErrorMessage("Failed to delete all history: ${result.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                showErrorMessage("Failed to delete all history: ${e.message}")
+            }
+        }
     }
 
     /**
@@ -145,7 +163,8 @@ class HistoryFragment : Fragment() {
      * Shows error message to user.
      */
     private fun showErrorMessage(message: String) {
-        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_LONG)
+            .show()
     }
 
     override fun onDestroyView() {

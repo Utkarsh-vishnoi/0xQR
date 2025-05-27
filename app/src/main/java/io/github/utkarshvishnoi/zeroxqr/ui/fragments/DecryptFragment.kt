@@ -9,21 +9,26 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import io.github.utkarshvishnoi.zeroxqr.R
+import io.github.utkarshvishnoi.zeroxqr.ZeroXQRApplication
 import io.github.utkarshvishnoi.zeroxqr.databinding.FragmentDecryptBinding
+import io.github.utkarshvishnoi.zeroxqr.repository.RepositoryResult
+import io.github.utkarshvishnoi.zeroxqr.ui.dialogs.PasswordDialog
+import kotlinx.coroutines.launch
 
 /**
  * Fragment for text decryption functionality.
  *
  * Phase 1: Complete UI with mock decryption functionality.
- * Phase 2: Will implement real AES-GCM decryption.
+ * Phase 2: Real AES-GCM decryption with password-based key derivation.
+ * Phase 3: Will enhance with FIDO2 hardware-backed security.
  */
 class DecryptFragment : Fragment() {
 
     private var _binding: FragmentDecryptBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var app: ZeroXQRApplication
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +42,9 @@ class DecryptFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Get application instance for encryption services
+        app = requireActivity().application as ZeroXQRApplication
+
         setupClickListeners()
     }
 
@@ -45,7 +53,7 @@ class DecryptFragment : Fragment() {
      */
     private fun setupClickListeners() {
         binding.btnDecrypt.setOnClickListener {
-            performMockDecryption()
+            initiateDecryption()
         }
 
         binding.btnClear.setOnClickListener {
@@ -62,51 +70,64 @@ class DecryptFragment : Fragment() {
     }
 
     /**
-     * Performs mock decryption with simulated processing time.
-     * TODO Phase 2: Replace with real AES-GCM decryption
+     * Phase 2: Initiates real decryption process with password dialog.
+     * Now uses simplified unified format - much more user-friendly!
      */
-    private fun performMockDecryption() {
+    private fun initiateDecryption() {
         val inputText = binding.etEncryptedText.text.toString().trim()
 
         if (inputText.isEmpty()) {
-            binding.textInputLayout.error = "Please enter encrypted text to decrypt"
+            binding.textInputLayout.error = "Please enter encrypted data to decrypt"
             return
         }
 
         binding.textInputLayout.error = null
 
+        // Show password dialog for decryption
+        val passwordDialog = PasswordDialog.newInstance(
+            isForDecryption = true
+        ) { password ->
+            performRealDecryption(inputText, password)
+        }
+
+        passwordDialog.show(parentFragmentManager, "password_dialog")
+    }
+
+    /**
+     * Phase 2: Performs real AES-GCM decryption using unified format.
+     * Much simpler than the old multi-component approach!
+     */
+    private fun performRealDecryption(unifiedData: String, password: String) {
         // Show progress
         binding.progressIndicator.visibility = View.VISIBLE
         binding.btnDecrypt.isEnabled = false
 
         lifecycleScope.launch {
-            // Simulate decryption processing
-            delay(1000)
+            try {
+                when (val result = app.encryptionRepository.decryptFromUnified(
+                    unifiedData = unifiedData,
+                    password = password,
+                    saveToHistory = true
+                )) {
+                    is RepositoryResult.Success -> {
+                        // Show results
+                        binding.tvDecryptedResult.text = result.data
+                        binding.cardResult.visibility = View.VISIBLE
 
-            // Generate mock decrypted data
-            val mockDecryptedData = generateMockDecryptedData(inputText)
+                        showSuccessMessage("Text decrypted successfully!")
+                    }
 
-            // Show results
-            binding.tvDecryptedResult.text = mockDecryptedData
-            binding.cardResult.visibility = View.VISIBLE
-
-            // Hide progress
-            binding.progressIndicator.visibility = View.GONE
-            binding.btnDecrypt.isEnabled = true
-
-            showSuccessMessage("Text decrypted successfully (mock)")
-        }
-    }
-
-    /**
-     * Generates mock decrypted data for Phase 1 demonstration.
-     * TODO Phase 2: Replace with real decryption
-     */
-    private fun generateMockDecryptedData(inputText: String): String {
-        return if (inputText.startsWith("MOCK_AES256_GCM_ENCRYPTED")) {
-            getString(R.string.mock_decrypted_data)
-        } else {
-            "Mock decryption: This would be the decrypted content of the provided encrypted text."
+                    is RepositoryResult.Error -> {
+                        showErrorMessage("Decryption failed: ${result.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                showErrorMessage("Decryption failed: ${e.message}")
+            } finally {
+                // Hide progress
+                binding.progressIndicator.visibility = View.GONE
+                binding.btnDecrypt.isEnabled = true
+            }
         }
     }
 
@@ -157,7 +178,8 @@ class DecryptFragment : Fragment() {
      * Shows error message to user.
      */
     private fun showErrorMessage(message: String) {
-        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_LONG)
+            .show()
     }
 
     /**
