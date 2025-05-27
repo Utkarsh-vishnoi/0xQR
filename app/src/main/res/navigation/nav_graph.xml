@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="io.github.utkarshvishnoi.zeroxqr.ui.fragments.HomeFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_nav_home_to_nav_encrypt"
+            app:destination="@id/nav_encrypt" />
+
+        <action
+            android:id="@+id/action_nav_home_to_nav_decrypt"
+            app:destination="@id/nav_decrypt" />
+
+        <action
+            android:id="@+id/action_nav_home_to_nav_history"
+            app:destination="@id/nav_history" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_encrypt"
+        android:name="io.github.utkarshvishnoi.zeroxqr.ui.fragments.EncryptFragment"
+        android:label="@string/nav_encrypt"
+        tools:layout="@layout/fragment_encrypt" />
+
+    <fragment
+        android:id="@+id/nav_decrypt"
+        android:name="io.github.utkarshvishnoi.zeroxqr.ui.fragments.DecryptFragment"
+        android:label="@string/nav_decrypt"
+        tools:layout="@layout/fragment_decrypt" />
+
+    <fragment
+        android:id="@+id/nav_history"
+        android:name="io.github.utkarshvishnoi.zeroxqr.ui.fragments.HistoryFragment"
+        android:label="@string/nav_history"
+        tools:layout="@layout/fragment_history" />
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="io.github.utkarshvishnoi.zeroxqr.ui.fragments.SettingsFragment"
+        android:label="@string/nav_settings"
+        tools:layout="@layout/fragment_settings" />
+
+</navigation>

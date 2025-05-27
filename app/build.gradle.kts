@@ -71,4 +71,8 @@ dependencies {
 
     // Security and cryptography (native Android, no network dependencies)
     implementation(libs.androidx.security.crypto)
+
+    // Navigation component for UI flow
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
 }

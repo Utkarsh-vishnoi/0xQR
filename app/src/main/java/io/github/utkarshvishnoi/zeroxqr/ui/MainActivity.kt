@@ -2,19 +2,25 @@ package io.github.utkarshvishnoi.zeroxqr.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import io.github.utkarshvishnoi.zeroxqr.R
 import io.github.utkarshvishnoi.zeroxqr.ZeroXQRApplication
 import io.github.utkarshvishnoi.zeroxqr.databinding.ActivityMainBinding
 
 /**
- * Main entry point for the 0xQR application.
+ * Main activity that hosts the navigation architecture for 0xQR.
  *
- * This activity serves as the foundation for the UI that will be
- * fully implemented in Phase 1. For now, it demonstrates that
- * the security infrastructure is properly initialized.
+ * Phase 1 Implementation: Complete UI with navigation between all screens
+ * using Navigation Component and Material Design 3 components.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var app: ZeroXQRApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,25 +33,46 @@ class MainActivity : AppCompatActivity() {
         // Get application instance for security managers
         app = application as ZeroXQRApplication
 
-        // Verify that our security infrastructure is working
-        verifySecuritySetup()
+        // Setup toolbar
+        setSupportActionBar(binding.toolbar)
+
+        // Setup navigation
+        setupNavigation()
     }
 
     /**
-     * Verifies that the security infrastructure has been properly
-     * initialized and is ready for cryptographic operations.
+     * Sets up the Navigation Component with bottom navigation and drawer.
      */
-    private fun verifySecuritySetup() {
-        val keystoreAvailable = app.keystoreManager.isHardwareBackedKeystoreAvailable()
-        val biometricStatus = app.biometricManager.checkBiometricAvailability()
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-        // Update UI to show security status (placeholder for Phase 1 implementation)
-        binding.statusText.text = buildString {
-            appendLine("0xQR Security Status")
-            appendLine("Hardware Keystore: ${if (keystoreAvailable) "✓ Available" else "✗ Not Available"}")
-            appendLine("Biometric Auth: ${biometricStatus.name}")
-            appendLine()
-            appendLine("Ready for Phase 1 UI Implementation")
-        }
+        // Configure app bar with navigation
+        appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.nav_home,
+                R.id.nav_encrypt,
+                R.id.nav_decrypt,
+                R.id.nav_history,
+                R.id.nav_settings
+            ),
+            binding.drawerLayout
+        )
+
+        setupActionBarWithNavController(navController, appBarConfiguration)
+
+        // Setup bottom navigation
+        binding.bottomNavigation.setupWithNavController(navController)
+
+        // Setup navigation drawer
+        binding.navView.setupWithNavController(navController)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
 }
